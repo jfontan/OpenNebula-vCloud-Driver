@@ -845,10 +845,6 @@ class VCloudVm
         vapp.power_on
         vm = vapp.vms.first
    
-        ##FW SECTION 
-        if !vm.ip_address.nil? and !ports.nil?
-            configure_firewall(connection,vApp_name,vm.ip_address,ports) 
-        end
         return vapp.id
     end
 
@@ -912,8 +908,13 @@ class VCloudVm
                 root_pass       = xml.root.elements["/VM/TEMPLATE/CONTEXT/ROOT_PASS"].text
                 context         = xml.root.elements["/VM/TEMPLATE/CONTEXT"]                
 
-                script          = xml.root.elements["/VM/TEMPLATE/CONTEXT/START_SCRIPT"].text
-  
+                script          = custom_script(context)
+
+                if !xml.root.elements["/VM/TEMPLATE/CONTEXT/START_SCRIPT"].nil?
+                    script = xml.root.elements["/VM/TEMPLATE/CONTEXT/START_SCRIPT"].text
+                end
+
+
                 opts            = {
                                 :computer_name => hostname,
                                 :admin_pass => root_pass,
@@ -982,7 +983,7 @@ class VCloudVm
     def self.custom_script(context)
 
          user_pubkey = context.elements["SSH_PUBLIC_KEY"].text if !context.elements["SSH_PUBLIC_KEY"].nil? 
-         username    = context.elements["USERNAME"].text
+         username    = context.elements["USERNAME"].text if !context.elements["USERNAME"].nil? 
          password    = context.elements["PASSWORD"].text  if !context.elements["PASSWORD"].nil? 
          os          = context.elements["OS"].text.downcase
 

@@ -117,17 +117,20 @@ When vCloud Driver is installed correctly, it's time to use onevcloud script to 
 
 ##The first step is import to OpenNebula the resources hosted in vCloud using the onevcloud script.
 
-  Hosts
+###Hosts
+
   /var/lib/one/remotes/vmm/vcloud/onevcloud hosts --vcloud [vcloud-uri.com] --vuser [user@organization] --vpass [password] --vdc [VDC_name]
 
 ![Alt text](picts/vcloud_host.png)
 
-  Templates
+###Templates
+
   /var/lib/one/remotes/vmm/vcloud/onevcloud hosts --vcloud [vcloud-uri.com] --vuser [user@organization] --vpass [password] --vdc [VDC_name]
 
 ![Alt text](picts/vcloud_templates.png)
 
-  Networks
+###Networks
+
   /var/lib/one/remotes/vmm/vcloud/onevcloud networks --vcloud [vcloud-uri.com] --vuser [user@organization] --vpass [password] --vdc [VDC_name]
 
 ![Alt text](picts/vcloud_networks.png)
@@ -139,6 +142,3 @@ When vCloud Driver is installed correctly, it's time to use onevcloud script to 
 ![Alt text](picts/vcloud_vm.png)
 
 ![Alt text](picts/vcloud_vm2.png)
-
-
-# FAQ
