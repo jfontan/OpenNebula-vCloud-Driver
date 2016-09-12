@@ -1,0 +1,473 @@
+#!/usr/bin/env ruby
+
+# -------------------------------------------------------------------------- #                                                                          
+# Licensed under the Apache License, Version 2.0 (the "License"); you may    #
+# not use this file except in compliance with the License. You may obtain    #
+# a copy of the License at                                                   #
+#                                                                            #
+# http://www.apache.org/licenses/LICENSE-2.0                                 #
+#                                                                            #
+# Unless required by applicable law or agreed to in writing, software        #
+# distributed under the License is distributed on an "AS IS" BASIS,          #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   #
+# See the License for the specific language governing permissions and        #
+# limitations under the License.                                             #
+#--------------------------------------------------------------------------- #
+
+ONE_LOCATION=ENV["ONE_LOCATION"]
+
+if !ONE_LOCATION
+    RUBY_LIB_LOCATION="/usr/lib/one/ruby"
+    REMOTES_LOCATION="/var/lib/one/remotes/"
+else
+    RUBY_LIB_LOCATION=ONE_LOCATION+"/lib/ruby"
+    REMOTES_LOCATION=ONE_LOCATION+"/var/remotes/"
+end
+
+$: << RUBY_LIB_LOCATION
+$: << RUBY_LIB_LOCATION+"/cli"
+$: << REMOTES_LOCATION+"vmm/vcloud/"
+
+require 'command_parser'
+require 'one_helper/onehost_helper'
+require 'one_helper/onecluster_helper'
+require 'vcloud_driver'
+
+cmd=CommandParser::CmdParser.new(ARGV) do
+
+    usage "`onevcloud` <command> [<args>] [<options>]"
+    version OpenNebulaHelper::ONE_VERSION
+
+    helper = OneHostHelper.new
+
+    before_proc do
+        helper.set_client(options)
+    end
+
+    ########################################################################
+    # Global Options
+    ########################################################################
+    cmd_options=CommandParser::OPTIONS-[CommandParser::VERBOSE]
+    set :option, cmd_options+OpenNebulaHelper::CLIENT_OPTIONS
+
+
+    VCLOUD = {
+        :name   => "vcloud",
+        :large  => "--vcloud vCloud" ,
+        :description => "The vCloud hostname",
+        :format => String
+    }
+
+    USER = {
+        :name   => "vuser",
+        :large  => "--vuser username" ,
+        :description => "The username to interact with vCloud",
+        :format => String
+    }
+
+    PASS = {
+        :name   => "vpass",
+        :large  => "--vpass password",
+        :description => "The password for the user",
+        :format => String
+    }
+
+    VDC = {
+        :name   => "vdc",
+        :large  => "--vdc vdc_name",
+        :description => "The virtual data center of vCloud",
+        :format => String
+    }
+
+    ############################################################################
+    # Import Virtual Data Center
+    ############################################################################
+    hosts_desc = <<-EOT.unindent
+        Import vCloud Virtual Data Centers as OpenNebula hosts
+    EOT
+
+     command :hosts, hosts_desc, :options=>[ VCLOUD, USER, PASS, VDC ] do
+        if  options[:vuser].nil? ||
+            options[:vpass].nil? ||
+            options[:vdc].nil? ||
+            options[:vcloud].nil?
+            STDERR.puts "vCloud connection parameters are mandatory to import"\
+                        " VCloud Virtual Data Center:\n"\
+                        "\t --vcloud vCloud hostname\n"\
+                        "\t --vuser username to login in vCloud\n"\
+                        "\t --vpass password for the user\n"\
+                        "\t --vdc virtual data center of vCloud"
+            exit -1
+        end
+
+        begin
+            STDOUT.print "\nConnecting to vCloud: #{options[:vcloud]}..."
+
+            connection = VCloudDriver::VCDConnection.new_connection(
+                    :user     => options[:vuser],
+                    :password => options[:vpass],
+                    :host     => options[:vcloud],
+                    :org      => options[:vuser].gsub(/^.*\@/, ""),
+                    :vdc      => options[:vdc])
+
+            STDOUT.print "done!\n\n"
+
+            STDOUT.print "Exploring vCloud resources..."
+
+            rs = connection.vcd_connection.vdcs
+
+            STDOUT.print "done!\n\n"
+
+            rs.each {|vdc|              
+              
+                STDOUT.print "  * Import VDC #{vdc.name} [y/n]? "
+
+                next if STDIN.gets.strip.downcase != 'y'
+
+                r, m = VCloudDriver::VCloudHost.to_one(vdc, connection)
+
+                if r == 0
+                    STDOUT.puts "    OpenNebula host #{vdc.name} with id #{m}"\
+                        " successfully created."
+                else
+                    STDOUT.puts "    Error: #{m}"
+                end
+
+                STDOUT.puts                
+            }
+        rescue Exception => e
+            STDOUT.puts "error: #{e.message}"
+            exit -1
+        end
+
+        exit 0
+end
+
+    templates_desc = <<-EOT.unindent
+        Import vCloud vApp Templates into OpenNebula
+    EOT
+
+    command :templates, templates_desc, :options=>[ VCLOUD, USER, PASS, VDC ] do
+        if  options[:vuser].nil? ||
+            options[:vpass].nil? ||
+            options[:vdc].nil? ||
+            options[:vcloud].nil?
+            STDERR.puts "vCloud connection parameters are mandatory to import"\
+                        " vApp templates:\n"\
+                        "\t --vcloud vCloud hostname\n"\
+                        "\t --vuser username to login in vCloud\n"\
+                        "\t --vpass password for the user\n"\
+                        "\t --vdc virtual data center of vCloud"
+            exit -1
+        end
+
+        begin
+            STDOUT.print "\nConnecting to vCloud: #{options[:vcloud]}..."
+
+            connection = VCloudDriver::VCDConnection.new_connection(
+                    :user     => options[:vuser],
+                    :password => options[:vpass],
+                    :host     => options[:vcloud], 
+                    :org      => options[:vuser].gsub(/^.*\@/, ""),
+                    :vdc      => options[:vdc])
+
+            STDOUT.print "done!\n\n"
+
+            STDOUT.print "Looking for vApp Templates..."
+
+            rs = connection.vcd_connection.catalogs;               
+
+            STDOUT.print "done!\n"
+
+            rs.each{ |catalog|
+
+                STDOUT.print "\nDo you want to process catalog #{catalog.name} [y/n]? "
+
+                next if STDIN.gets.strip.downcase != 'y'
+
+                if catalog.items.empty?
+                    STDOUT.print "    No new VM Templates found in #{catalog.name}...\n\n"
+                    next
+                end
+
+                catalog.items.each{ |catalog_item|
+                    if catalog_item.type.include? "vAppTemplate"    
+
+                        STDOUT.print "\n  * VM Template found:\n"\
+                                     "      - Name   : #{catalog_item.name}\n"\
+                                     "      - UUID   : #{catalog_item.id}\n"
+                        STDOUT.print "      - Desc   : #{catalog_item.description}\n" if catalog_item.description != ""
+                        STDOUT.print "      - vApp Template ID   : #{catalog_item.vapp_template_id}\n"\
+                                     "      - Date created: #{catalog_item.date}\n"\
+                                     "    Import this VM template [y/n]? "
+
+                        next if STDIN.gets.strip.downcase != 'y'
+
+                        str = VCloudDriver::VCloudVm.to_one(catalog_item,catalog.name)
+
+                        one_t = ::OpenNebula::Template.new(
+                                ::OpenNebula::Template.build_xml,connection.one)
+
+                        rc = one_t.allocate(str)
+
+                        if ::OpenNebula.is_error?(rc)                            
+                            STDOUT.puts "    Error creating template: #{rc.message}\n"
+                        else
+                            STDOUT.puts "    OpenNebula template #{one_t.id} created!\n"
+                        end
+                    end
+                }
+                STDOUT.print "done!\n"
+            }
+        rescue Exception => e
+            STDOUT.puts "error: #{e.message}"
+            exit -1
+        end
+
+        exit 0
+    end
+
+    network_desc = <<-EOT.unindent
+        Import vCloud networks into OpenNebula
+    EOT
+
+    command :networks, network_desc, :options=>[ VCLOUD, USER, PASS, VDC ] do
+        if  options[:vuser].nil? ||
+            options[:vpass].nil? ||
+            options[:vdc].nil? ||
+            options[:vcloud].nil?
+            STDERR.puts "vCloud connection parameters are mandatory to import"\
+                        " vNetworks:\n"\
+                        "\t --vcloud vCloud hostname\n"\
+                        "\t --vuser username to login in vCloud\n"\
+                        "\t --vpass password for the user\n"\
+                        "\t --vdc virtual data center of vCloud"
+            exit -1
+        end
+
+        begin
+            STDOUT.print "\nConnecting to vCloud: #{options[:vcloud]}..."
+
+            connection = VCloudDriver::VCDConnection.new_connection(
+                    :user     => options[:vuser],
+                    :password => options[:vpass],
+                    :host     => options[:vcloud], 
+                    :org      => options[:vuser].gsub(/^.*\@/, ""),
+                    :vdc      => options[:vdc])
+
+            STDOUT.print "done!\n\n"
+
+            STDOUT.print "Looking for vCloud networks..."
+
+            rs = connection.vcd_connection.find_vdc_by_name(options[:vdc]).networks
+            if rs.empty?
+                    STDOUT.print "    No new Networks found in #{options[:vdc]}...\n\n"
+                    
+            else
+
+                rs.each { |net|                    
+                    #net.href
+                    print_str =  "\n  * Network found:\n"\
+                                 "      - Name    : #{net.name}\n"\
+                                 "      - UUID    : #{net.id}\n"\
+                                 "      - Fence Mode   : #{net.fence_mode}\n"
+                    print_str += "      - Description: #{net.description}\n" if net.description != ""
+                    print_str += "    Import this Network [y/n]? "
+
+                    STDOUT.print print_str
+
+
+                    next if STDIN.gets.strip.downcase != 'y'
+
+                    STDOUT.print "Is this network PUBLIC [y/n]? "
+
+                    public_net = STDIN.gets.strip
+
+                    str = ""
+                    
+                    STDOUT.print "    How many VMs are you planning"\
+                                 " to fit into this network [255]? "
+
+                    size = STDIN.gets.strip
+
+                    size = "255" if size.to_i.to_s != size
+
+                    #TYPE
+                    STDOUT.print "    What type of Virtual Network"\
+                                 " do you want to create (IPv[4],IPv[6]"\
+                                 ",[E]thernet) ?"
+
+                    type = STDIN.gets.strip
+
+                    ar_str =  "\nAR=[TYPE=\""
+
+                    case type.downcase
+                        when "4"
+                            ar_str += "IP4\""
+                            STDOUT.print "    Please input the first IP "\
+                                         "in the range: "
+                            ip = STDIN.gets.strip
+                            ar_str += ",IP=" + ip
+
+                            STDOUT.print "    Please input the first MAC "\
+                                         "in the range [Enter for default]: "
+                            mac = STDIN.gets.strip
+                            ar_str += ",MAC=" + mac if !mac.empty?
+                        when "6"
+                            ar_str += "IP6\""
+                            STDOUT.print "    Please input the first MAC "\
+                                         "in the range [Enter for default]: "
+                            mac = STDIN.gets.strip
+                            ar_str += ",MAC=" + mac if !mac.empty?
+
+                            STDOUT.print "    Please input the GLOBAL PREFIX "\
+                                         "[Enter for default]: "
+                            gp = STDIN.gets.strip
+                            ar_str += ",GLOBAL_PREFIX=" + gp if !gp.empty?
+
+                            STDOUT.print "    Please input the ULA PREFIX "\
+                                         "[Enter for default]: "
+                            up = STDIN.gets.strip
+                            ar_str += ",ULA_PREFIX=" + up if !up.empty?
+                        when "e"
+                            ar_str += "ETHER\""
+                            STDOUT.print "    Please input the first MAC "\
+                                 "in the range [Enter for default]: "
+                            mac = STDIN.gets.strip
+                            ar_str += ",MAC=" + mac if !mac.empty?
+                        else
+                         STDOUT.puts "    Type [#{type}] not supported,"\
+                                    " defaulting to Ethernet."
+                         ar_str += "ETHER\""
+                         STDOUT.print "    Please input the first MAC "\
+                              "in the range [Enter for default]: "
+                         mac = STDIN.gets.strip
+                         ar_str += ",MAC=" + mac if !mac.empty?
+                    end
+
+                    ar_str += ",SIZE = \"#{size}\"]"
+
+                    str += ar_str
+
+                    one_vn = ::OpenNebula::VirtualNetwork.new(
+                                ::OpenNebula::Template.build_xml, connection.one)
+
+                    str <<  "NAME   = \"#{net.name}\"\n"
+                    str <<  "UUID   = \"#{net.id}\"\n"
+                    str <<  "BRIDGE   = \"#{net.name}\"\n"
+                    str <<  "VN_MAD   = \"dummy\"\n"
+
+                    if public_net == 'y'
+                        str <<  "PUBLIC = \"YES\"\n"
+                    else
+                        str <<  "PUBLIC = \"NO\"\n"
+                    end
+                 
+
+                    if !net.description.empty?                                         
+                        str << "DESCRIPTION = \"#{net.description} - vCloud Network imported by OpenNebula\"\n"
+                    else
+                        str << "DESCRIPTION = \"vCloud Network imported by OpenNebula\"\n"                                   
+                    end                                        
+        
+
+
+                    rc = one_vn.allocate(str)
+
+                    if ::OpenNebula.is_error?(rc)
+                        STDOUT.puts "    Error creating virtual network: " +
+                                    " #{rc.message}\n"
+                    else
+                        STDOUT.puts "    OpenNebula virtual network " +
+                                    "#{one_vn.id} created!\n"
+                    end
+                }
+
+                STDOUT.print "done!\n"
+
+            end                   
+
+        rescue Exception => e
+            STDOUT.puts "error: #{e.message}"
+            exit -1
+        end
+
+        exit 0
+    end
+
+    datastores_desc = <<-EOT.unindent
+        Import vCloud Datastores into OpenNebula
+    EOT
+    
+    command :datastores, datastores_desc, :options=>[ VCLOUD, USER, PASS, VDC ] do
+        if  options[:vuser].nil? ||
+            options[:vpass].nil? ||
+            options[:vdc].nil? ||
+            options[:vcloud].nil?
+            STDERR.puts "vCloud connection parameters are mandatory to import"\
+                        " datastores:\n"\
+                        "\t --vcloud vCloud hostname\n"\
+                        "\t --vuser username to login in vCloud\n"\
+                        "\t --vpass password for the user\n"\
+                        "\t --vdc virtual data center of vCloud"
+            exit -1
+        end
+
+        begin
+            STDOUT.print "\nConnecting to vCloud: #{options[:vcloud]}..."
+
+            connection = VCloudDriver::VCDConnection.new_connection(
+                    :user     => options[:vuser],
+                    :password => options[:vpass],
+                    :host     => options[:vcloud], 
+                    :org      => options[:vuser].gsub(/^.*\@/, ""),
+                    :vdc      => options[:vdc])
+
+            STDOUT.print "done!\n\n"
+
+            STDOUT.print "Looking for Datastores..."
+
+            rs = connection.vcd_connection.find_vdc_by_name(options[:vdc]).storage_profiles
+
+            STDOUT.print "done!\n"
+
+            rs.each { |ds|  
+
+                print_str =  "\n  * Datastore found:\n"\
+                             "      - Name      : #{ds.name}\n"\
+                             "      - Total MB  : #{ds.storage_limit_mb}\n"\
+                             "      - Free  MB  : #{ds.available_storage}\n"\
+                             "    Import this Datastore [y/n]? "
+                   
+                STDOUT.print print_str                           
+
+                next if STDIN.gets.strip.downcase != 'y'                    
+
+                one_d = ::OpenNebula::Datastore.new(
+                                ::OpenNebula::Datastore.build_xml, connection.one)
+
+                str = "NAME=#{ds.name}\n"\
+                      "DS_MAD=vcloud\n"\
+                      "TM_MAD=vcloud\n"\
+                      "VCLOUD_HOST=\"#{options[:vdc]}\"\n"
+
+                rc = one_d.allocate(str)
+
+                if ::OpenNebula.is_error?(rc)
+                    STDOUT.puts "    Error creating datastore: #{rc.message}\n"\
+                                "    One datastore can exist only once. Also, no spaces allowed "\
+                                "in datastore name (rename it in vCloud "\
+                                "and try again)"
+                else
+                        STDOUT.puts "    OpenNebula datastore #{one_d.id} created!\n"
+                end
+                
+            }
+        rescue Exception => e
+            STDOUT.puts "error: #{e.message}"
+            exit -1
+        end
+
+        exit 0
+end
+end

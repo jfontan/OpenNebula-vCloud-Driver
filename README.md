@@ -55,26 +55,14 @@ frontend installed on Ubuntu 14.04.
 
 
 ## Installation, Configuration and Usage
+
 Use [this guide](https://github.com/CSUC/OpenNebula-vCloud-Driver/blob/master/Guide.md)
 
 ## References
+
 [CSUC] (http://www.csuc.cat)
 [OpenNebula] (http://opennebula.org/)
 
 ## License
 
-CSUC - Consorci de Serveis Universitaris de Catalunya
-
-Copyright 2014-2016, OpenNebula Project, OpenNebula Systems (formerly C12G Labs)
-
-Licensed under the Apache license, version 2.0 (the "license"); 
-You may not use this file except in compliance with the license. 
-You may obtain a copy of the license at:
-
-http://www.apache.org/licenses/LICENSE-2.0.html 
-
-Unless required by applicable law or agreed to in writing, 
-software distributed under the license is distributed on an "as 
-is" basis, without warranties or conditions of any kind, either 
-express or implied. See the license for the specific language 
-governing permissions and limitations under the license.
+Apache 2.0
