@@ -157,10 +157,12 @@ During the instanciation, vcloud driver takes some variables from the template t
 
 ### USER'S CONTEXT VARIABLES
 
-If you activate the customization and the template supports vcloud driver during the instaciation a user will be created. This variables must be set in the "User Settings" tab in Sunstone.
+If you activate the customization and the template supports it, during the instaciation a user will be created. This variables must be set in the "User Settings" tab in Sunstone.
 
 * PASS      [Hash]        This information will be the password for your user in LINUX OS      
 * PASS_WIN  [Clear Text]  This information will be the password for your user in WINDOWS OS   
 * ROOT_PASS [Clear Text]  This information will be the password for the root/Administrator in LINUX/WINDOWS OS
 
 If you add a Public SSH Key for that user, it will be added to the Linux VM during its instanciation.
+
+## FAQ

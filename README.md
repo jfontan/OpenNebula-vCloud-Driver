@@ -65,4 +65,4 @@ Use [this guide](https://github.com/CSUC/OpenNebula-vCloud-Driver/blob/master/Gu
 
 ## License
 
-Apache 2.0
+[Apache 2.0] (https://github.com/CSUC/OpenNebula-vCloud-Driver/blob/master/LICENSE)
