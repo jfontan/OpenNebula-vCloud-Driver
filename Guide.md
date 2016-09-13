@@ -1,6 +1,6 @@
 # VCLOUD DRIVER. Installation and Configuration Guide
 
-# TABLE OF CONTENTS
+## TABLE OF CONTENTS
 
 * Install OpenNebula
 * Install vCloud Driver
@@ -13,14 +13,17 @@
     * Install gem
 * Import hosts,templates,networks,datastores
 * Usage
+    * First Steps
+    * Template's Context Variables
+    * User's Context Variables
 * FAQ
 
-# INSTALL OPENNEBULA
+## INSTALL OPENNEBULA
 
 [http://docs.opennebula.org/5.0/deployment/opennebula_installation/index.html](http://docs.opennebula.org/5.0/deployment/opennebula_installation/index.html)
 
 
-# INSTALL VCLOUD DRIVER FOR OPENNEBULA (IN THE FRONTEND)
+## INSTALL VCLOUD DRIVER FOR OPENNEBULA (IN THE FRONTEND)
 
 ### 1.Download and copy the files in their respective directories:
 
@@ -107,15 +110,17 @@ As a root:
 	gem install ruby_vcloud_sdk-0.7.5.gem
 
 
-# IMPORT HOSTS,TEMPLATES, NETWORKS AND DATASTORE USING ONEVCLOUD SCRIPT
+## IMPORT HOSTS,TEMPLATES, NETWORKS AND DATASTORE USING ONEVCLOUD SCRIPT
 
 When vCloud Driver is installed correctly, it's time to use onevcloud script to import the resources of vCloud.
 
 	/var/lib/one/remotes/vmm/vcloud/onevcloud [hosts | templates | networks | datastores] --vcloud [vcloud-uri.com] --vuser [user@organization] --vpass [password] --vdc [VDC_name]
 
-# USAGE
+## USAGE
 
-##The first step is import to OpenNebula the resources hosted in vCloud using the onevcloud script.
+### FIRST STEPS
+
+The first step is import to OpenNebula the resources hosted in vCloud using the onevcloud script.
 
 ###Hosts
 
@@ -142,3 +147,20 @@ When vCloud Driver is installed correctly, it's time to use onevcloud script to 
 ![Alt text](picts/vcloud_vm.png)
 
 ![Alt text](picts/vcloud_vm2.png)
+
+### TEMPLATE'S CONTEXT VARIABLES
+
+During the instanciation, vcloud driver takes some variables from the template to configure capabilities such as CUSTOMIZATION. If this variables are not in the template, the capabilities won't be configured correctly. Please add or modify the variables that you need.
+
+* CUSTOMIZATION = "YES" The default value is YES. If you don't want the customization, change the value to "NO".
+* OS = "LINUX | WINDOWS | OTHER" Check this variable and modify the value for the OS of the template. This value is important because is used during the customization process.
+
+### USER'S CONTEXT VARIABLES
+
+If you activate the customization and the template supports vcloud driver during the instaciation a user will be created. This variables must be set in the "User Settings" tab in Sunstone.
+
+* PASS      [Hash]        This information will be the password for your user in LINUX OS      
+* PASS_WIN  [Clear Text]  This information will be the password for your user in WINDOWS OS   
+* ROOT_PASS [Clear Text]  This information will be the password for the root/Administrator in LINUX/WINDOWS OS
+
+If you add a Public SSH Key for that user, it will be added to the Linux VM during its instanciation.

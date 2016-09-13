@@ -754,7 +754,7 @@ class VCloudVm
     #############################################################################################################
     def self.to_one(template,catalog_name)
         
-        operating_system = "UNKNOWN"
+        operating_system = "OTHER"
         operating_system = "LINUX" if template.name.downcase.include? "linux"
         operating_system = "WINDOWS" if template.name.downcase.include? "windows"
 
@@ -767,13 +767,12 @@ class VCloudVm
         str <<  "  CUSTOMIZE = \"YES\",\n" 
         str <<  "  HOSTNAME = \"cloud-$UNAME\",\n"                            
         str <<  "  USERNAME = \"$UNAME\",\n"        
-        str <<  "  PASSWORD = \"$USER[PASS_WIN]\",\n" if operating_system ==  "WINDOWS"        
-        str <<  "  PASSWORD = \"$USER[PASS]\",\n" if operating_system ==  "LINUX"
+        str <<  "  PASSWORD = \"$USER[PASS_WIN]\",\n"       
+        str <<  "  PASSWORD = \"$USER[PASS]\",\n"
         str <<  "  ROOT_PASS = \"$USER[ROOT_PASS]\",\n"                                  
         str <<  "  NETWORK = \"YES\",\n"   
-        str <<  "  SSH_PUBLIC_KEY = \"$USER[SSH_PUBLIC_KEY]\",\n" if operating_system ==  "LINUX"      
+        str <<  "  SSH_PUBLIC_KEY = \"$USER[SSH_PUBLIC_KEY]\",\n"    
         str <<  "  OS = \"#{operating_system}\",\n"
-        str <<  "  WHITE_TCP_PORTS = \"22,80\"\n"  
         str <<  "]\n"                  
         str <<  "PUBLIC_CLOUD = [\n"
         str <<  "  TYPE        =\"vcloud\",\n"

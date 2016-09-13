@@ -8,4 +8,5 @@
     * Monitor hosts and VM's.
     * Create, revert and delete VM's snapshots.
     * Hot-attach and detach NICs to VM's (To detach NICs is necessary to reboot the VM).
+    * Automatized customization of the VMs instanciated. The templates must be configured for that.
     * Import networks, hosts, templates and datastores hosted in vCloud using onevcloud script.

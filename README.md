@@ -44,8 +44,8 @@ More info:
 
 CSUC - Consorci de Serveis Universitaris de Catalunya
 
-[http://www.csuc.cat] (http://www.csuc.cat)
-[CSUC GitHub] (https://github.com/CSUC)
+* [http://www.csuc.cat] (http://www.csuc.cat)
+* [CSUC GitHub] (https://github.com/CSUC)
 
 
 ## Compatibility
@@ -60,8 +60,8 @@ Use [this guide](https://github.com/CSUC/OpenNebula-vCloud-Driver/blob/master/Gu
 
 ## References
 
-[CSUC] (http://www.csuc.cat)
-[OpenNebula] (http://opennebula.org/)
+* [CSUC] (http://www.csuc.cat)
+* [OpenNebula] (http://opennebula.org/)
 
 ## License
 
