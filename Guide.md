@@ -136,6 +136,9 @@ The first step is import to OpenNebula the resources hosted in vCloud using the 
 
 ###Networks
 
+  For the current version, only POOL addressment is supported. OpenNebula generates MAC addresses and passes them to vCloud. 
+  For that reason, when you use the script to import networks to OpenNebula you must to choose [E]thernet type network.
+
   /var/lib/one/remotes/vmm/vcloud/onevcloud networks --vcloud [vcloud-uri.com] --vuser [user@organization] --vpass [password] --vdc [VDC_name]
 
 ![Alt text](picts/vcloud_networks.png)
