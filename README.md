@@ -36,8 +36,8 @@ contributed under the Apache License 2.0.
 More info: 
 
 * [How to Contribute] (http://opennebula.org/software:addons#how_to_contribute_to_an_existing_add-on) 
-* Support: [OpenNebula user mailing list] (http://opennebula.org/community:mailinglists) 
-* Development: [OpenNebula developers mailing list] (http://opennebula.org/community:mailinglists) 
+* Support: [OpenNebula user forum](https://forum.opennebula.org/c/support)
+* Development: [OpenNebula developers forum](https://forum.opennebula.org/c/development)
 * Issues Tracking: [Github issues] (https://github.com/CSUC/OpenNebula-vCloud-Driver/issues)
 
 ## Authors
